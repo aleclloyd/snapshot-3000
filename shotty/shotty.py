@@ -30,15 +30,20 @@ def snapshots():
 
 @snapshots.command('list')
 @click.option('--project', default=None, help='Only snapshots for project (tag Project:<name>)')
-def list_snapshots(project):
+@click.option('--all', 'list_all', default=False, is_flag=True,
+              help="List all snapshots for each volume, not just the most recent")
+def list_snapshots(project,list_all):
     """List EC2 Snapshots"""
 
     instances = filter_instances(project)
     for i in instances:
         for v in i.volumes.all():
             for s in v.snapshots.all():
-                print(", ".join(("Snapshot ID: "+ s.id, "Volume ID: "+ v.id, "Instance ID: "+ i.id, "State: "+ s.state, "Progress: "+ s.progress, "Start Time: " + s.start_time.strftime('%c'))))
-
+                print(", ".join(("Snapshot ID: " + s.id, "Volume ID: " + v.id, "Instance ID: " + i.id,
+                                 "State: " + s.state, "Progress: " + s.progress,
+                                 "Start Time: " + s.start_time.strftime('%c'))))
+                if s.state == 'completed' and not list_all:
+                    break
     return
 
 
@@ -85,6 +90,7 @@ def create_snapshots(project):
     print('Jobs Done')
     return
 
+
 @instances.command('list')
 @click.option('--project', default=None, help='Only instances for project (tag Project:<name>)')
 def list_instances(project):
@@ -116,7 +122,6 @@ def stop_instancess(project):
         except botocore.exceptions.ClientError as e:
             print('Could not stop {0}. '.format(i.id) + str(e))
             continue
-
 
 
 @instances.command('start')
